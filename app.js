@@ -1033,24 +1033,21 @@ function render() {
 function resetToDefaults() {
   // sinnvolle Defaultwerte: heterozygot bei Dominanzloci, damit man direkt Variation sieht
   const defaults = {
-    E: "Ee",
-    // Agouti nutzt hier die Allele Ap, A1, At, a0 (kein "A/a").
-    // Default: Bay-Träger-Genotyp (A1a0), damit Variation sichtbar ist.
-    A: "A1a0",
-    // alle anderen Loci: leer = ignorieren
-    D: "",
-    CrPrl: "",
-    Ch: "",
-    G: "",
-    Z: "",
-    O: "",
-    SPL: "",
-    LP: "",
-    PATN1: "",
-    KIT: "",
-    Fl: "",
-    Sty: "",
-    Ra: "",
+    E: "ee",
+    A: "a0a0",
+    D: "dd",
+    CrPrl: "crcr",
+    Ch: "chch",
+    G: "gg",
+    Z: "zz",
+    O: "oo",
+    SPL: "splspl",
+    LP: "lplp",
+    PATN1: "P1P1",
+    KIT: "00",
+    Fl: "FlFl",
+    Sty: "stysty",
+    Ra: "rara",
   };
 
   function setSelectValueSafe(parentIdx, locusKey, value) {
@@ -1119,7 +1116,6 @@ function init() {
   const calc2ResetBtn = document.getElementById("calc2ResetBtn");
   const calc2Result = document.getElementById("calc2Result");
   const calc2Summary = document.getElementById("calc2Summary");
-  const calc2More = document.getElementById("calc2More");
   const calc2Disciplines = document.getElementById("calc2Disciplines");
   const calc2Basics = document.getElementById("calc2Basics");
   const calc2Interieur = document.getElementById("calc2Interieur");
@@ -1133,10 +1129,17 @@ function init() {
     calc2Result.textContent = "Noch keine Berechnung hinterlegt.";
     if (calc2Summary) {
       calc2Summary.classList.add("muted");
-      calc2Summary.textContent =
-        "Nach „Berechnen“ erscheint hier die Kurzfassung zum Kopieren.";
+      calc2Summary.innerHTML = `
+        <div class="summaryHeader">
+          <span class="pill">Kurzfassung</span>
+          <label class="check">
+            <input id="calc2More" type="checkbox" />
+            mehr anzeigen
+          </label>
+        </div>
+        <p class="summaryPlaceholder">Nach „Berechnen“ erscheint hier die Kurzfassung zum Kopieren.</p>
+      `;
     }
-    if (calc2More) calc2More.checked = false;
   }
   function calc2Render() {
     if (!calc2Result) return;
@@ -1183,11 +1186,7 @@ function init() {
     calc2Result.classList.remove("muted");
     calc2Result.innerHTML = `
       <div class="pill">Turnierwerte</div>
-      <div class="muted" style="margin-bottom:10px">
-        Parser-Check: Disziplinen=${discs.length}, Grundlagen/Gangarten=${basics.length}, Interieur=${inter.length}.
-        Wert = (Disziplin-% × 3) + Summe der 6 Grundlagen/Gangarten-%; Leistungsklasse aus dem niedrigsten dieser sieben %-Werte; Interieur aus dem Durchschnitt der drei genannten Merkmale.
-      </div>
-      <pre style="white-space:pre-wrap;margin:0">${escapeHtml(lines.join("\n") || "Keine Disziplinen erkannt.")}</pre>
+      <pre style="white-space:pre-wrap;margin:10px 0 0 0">${escapeHtml(lines.join("\n") || "Keine Disziplinen erkannt.")}</pre>
       ${
         missingLines
           ? `<details style="margin-top:10px"><summary class="muted">Fehlende/unerkannt Werte anzeigen</summary><pre style="white-space:pre-wrap;margin:10px 0 0 0">${escapeHtml(
@@ -1198,7 +1197,8 @@ function init() {
     `;
 
     if (calc2Summary) {
-      const filtered = applyKurzfassungFilter(computed, { mode: calc2More?.checked ? "more" : "default" });
+      const moreChecked = document.getElementById("calc2More")?.checked ?? false;
+      const filtered = applyKurzfassungFilter(computed, { mode: moreChecked ? "more" : "default" });
       const summaryLines = filtered
         .map((row) =>
           formatKurzfassungLine(
@@ -1212,7 +1212,13 @@ function init() {
 
       calc2Summary.classList.remove("muted");
       calc2Summary.innerHTML = `
-        <div class="pill">Kurzfassung (zum Kopieren)</div>
+        <div class="summaryHeader">
+          <span class="pill">Kurzfassung</span>
+          <label class="check">
+            <input id="calc2More" type="checkbox" ${moreChecked ? "checked" : ""} />
+            mehr anzeigen
+          </label>
+        </div>
         <pre style="white-space:pre-wrap;margin:0">${escapeHtml(summaryLines || "—")}</pre>
       `;
     }
@@ -1220,7 +1226,9 @@ function init() {
 
   if (calc2Btn) calc2Btn.addEventListener("click", calc2Render);
   if (calc2ResetBtn) calc2ResetBtn.addEventListener("click", calc2Reset);
-  if (calc2More) calc2More.addEventListener("change", calc2Render);
+  calc2Summary?.addEventListener("change", (e) => {
+    if (e.target instanceof HTMLInputElement && e.target.id === "calc2More") calc2Render();
+  });
 
   initTabs();
   calc2Reset();

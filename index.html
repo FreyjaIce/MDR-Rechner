@@ -3,14 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MDR Farbgenetik Rechner</title>
+    <title>MDR Rechner</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
     <div class="container">
       <header class="header">
         <div>
-          <h1>MDR Farbgenetik Rechner</h1>
+          <h1>MDR Rechner</h1>
         </div>
       </header>
 
@@ -159,9 +159,6 @@
             <button id="resetBtn" class="secondary">Zurücksetzen</button>
           </div>
 
-          <details class="help">
-            <summary>Hinweise</summary>
-          </details>
           </section>
 
           <section class="card">
@@ -173,10 +170,6 @@
         <section id="page-calc2" class="page hidden">
           <section class="card">
             <h2>Turnierwerte</h2>
-            <p class="muted" style="margin-top:0">
-              Füge die Werte aus dem Spiel hier ein (Copy/Paste). Der Parser ist tolerant gegenüber Leerzeilen und
-              Überschriften.
-            </p>
             <div class="callout" style="margin-bottom:12px">
               Kopiere die jeweiligen Werte in das Eingabefeld.<br />
               <b>Achtung!</b> Dieser Rechner funktioniert nur bei komplett un- oder austrainierten Pferden! Bei
@@ -184,7 +177,7 @@
               und nicht der Trainingsfortschritt mitgerechnet wird.
             </div>
 
-            <div class="twoCol">
+            <div class="threeCol">
               <div class="formRow">
                 <label for="calc2Disciplines">Disziplinen (%-Werte)</label>
                 <textarea
@@ -204,25 +197,21 @@
                   placeholder="Grundlagen&#10;Wendigkeit&#10;23 %&#10;&#10;...&#10;&#10;Gangarten&#10;Schritt&#10;18 %&#10;..."
                 ></textarea>
               </div>
-            </div>
 
-            <div class="formRow" style="margin-top:8px">
-              <label for="calc2Interieur">Interieur (Textwerte)</label>
-              <textarea
-                id="calc2Interieur"
-                class="textarea"
-                rows="8"
-                placeholder="Temperament	Gut&#10;Gelehrigkeit	In Ordnung&#10;Leistungsbereitschaft	schlecht&#10;..."
-              ></textarea>
+              <div class="formRow">
+                <label for="calc2Interieur">Interieur (Textwerte)</label>
+                <textarea
+                  id="calc2Interieur"
+                  class="textarea"
+                  rows="16"
+                  placeholder="Temperament	Gut&#10;Gelehrigkeit	In Ordnung&#10;Leistungsbereitschaft	schlecht&#10;..."
+                ></textarea>
+              </div>
             </div>
 
             <div class="actions">
               <button id="calc2Btn" class="primary" type="button">Berechnen</button>
               <button id="calc2ResetBtn" class="secondary" type="button">Zurücksetzen</button>
-              <label class="check">
-                <input id="calc2More" type="checkbox" />
-                mehr anzeigen
-              </label>
             </div>
 
             <div id="calc2Result" class="result muted" style="margin-top:12px">
@@ -230,7 +219,14 @@
             </div>
 
             <div id="calc2Summary" class="result muted" style="margin-top:12px">
-              Nach „Berechnen“ erscheint hier die Kurzfassung zum Kopieren.
+              <div class="summaryHeader">
+                <span class="pill">Kurzfassung</span>
+                <label class="check">
+                  <input id="calc2More" type="checkbox" />
+                  mehr anzeigen
+                </label>
+              </div>
+              <p class="summaryPlaceholder">Nach „Berechnen“ erscheint hier die Kurzfassung zum Kopieren.</p>
             </div>
           </section>
         </section>
