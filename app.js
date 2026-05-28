@@ -65,7 +65,7 @@ const LOCI = [
     key: "O",
     label: "Overo (O/o)",
     alleleOrder: ["O", "o"],
-    genotypes: ["OO", "Oo", "oo"],
+    genotypes: ["Oo", "oo"],
     allowBlank: true,
   },
   {
@@ -103,7 +103,6 @@ const LOCI = [
       "TOWI",
       "TORn",
       "TOSB",
-      "WIWI",
       "WIRn",
       "WISB",
       "RnRn",
@@ -134,6 +133,24 @@ const LOCI = [
     allowBlank: true,
   },
 ];
+
+const GENETICS_DEFAULTS = {
+  E: "ee",
+  A: "a0a0",
+  D: "dd",
+  CrPrl: "crcr",
+  Ch: "chch",
+  G: "gg",
+  Z: "zz",
+  O: "oo",
+  SPL: "splspl",
+  LP: "lplp",
+  PATN1: "P1P1",
+  KIT: "00",
+  Fl: "FlFl",
+  Sty: "stysty",
+  Ra: "rara",
+};
 
 function $(id) {
   const el = document.getElementById(id);
@@ -467,7 +484,7 @@ function derivePhenotype({ E, A, G, CrPrl, Ch, Z, D, O, SPL, LP, PATN1, KIT, Fl,
     suffixes.length ? " " : ""
   }${suffixes.join(" ")}`.trim();
 
-  const withDominantWhite = hasDominantWhite ? `Dominant White (${withAffixes})` : withAffixes;
+  const withDominantWhite = hasDominantWhite ? `Dominant White` : withAffixes;
 
   // 8) Grey überschreibt (langfristig)
   const isGrey = !!G && G !== "gg";
@@ -477,10 +494,10 @@ function derivePhenotype({ E, A, G, CrPrl, Ch, Z, D, O, SPL, LP, PATN1, KIT, Fl,
   if (isGrey) tags.push("Grey");
 
   // Dominant White ist dominanter als Grey:
-  // - wenn WI vorhanden: immer "Dominant White (...)"
-  // - sonst wenn Grey vorhanden: "Grey (...)"
+  // - wenn WI vorhanden: immer "Dominant White"
+  // - sonst wenn Grey vorhanden: "Grey"
   // - sonst normal
-  const shown = hasDominantWhite ? withDominantWhite : isGrey ? `Grey (${withAffixes})` : withAffixes;
+  const shown = hasDominantWhite ? withDominantWhite : isGrey ? `Grey` : withAffixes;
   const detail = null;
   return { shown, detail, tags };
 }
@@ -1030,53 +1047,44 @@ function render() {
   `;
 }
 
-function resetToDefaults() {
-  // sinnvolle Defaultwerte: heterozygot bei Dominanzloci, damit man direkt Variation sieht
-  const defaults = {
-    E: "ee",
-    A: "a0a0",
-    D: "dd",
-    CrPrl: "crcr",
-    Ch: "chch",
-    G: "gg",
-    Z: "zz",
-    O: "oo",
-    SPL: "splspl",
-    LP: "lplp",
-    PATN1: "P1P1",
-    KIT: "00",
-    Fl: "FlFl",
-    Sty: "stysty",
-    Ra: "rara",
-  };
-
-  function setSelectValueSafe(parentIdx, locusKey, value) {
-    const sel = $(makeSelectId(parentIdx, locusKey));
-    const exists = [...sel.options].some((o) => o.value === value);
-    sel.value = exists ? value : sel.options[0]?.value ?? "";
-  }
-
+function applyGeneticsDefaults() {
   for (const locus of LOCI) {
-    const v = defaults[locus.key] ?? locus.genotypes[0];
-    setSelectValueSafe(1, locus.key, v);
-    setSelectValueSafe(2, locus.key, v);
+    const value = GENETICS_DEFAULTS[locus.key] ?? locus.genotypes[0];
+    for (const parentIdx of [1, 2]) {
+      const sel = $(makeSelectId(parentIdx, locus.key));
+      const exists = [...sel.options].some((o) => o.value === value);
+      sel.value = exists ? value : sel.options[0]?.value ?? "";
+    }
   }
+}
+
+function resetToDefaults() {
+  applyGeneticsDefaults();
   $("result").classList.add("muted");
   $("result").textContent = "Wähle die Genotypen und klicke auf „Berechnen“.";
 }
 
 function init() {
   for (const locus of LOCI) {
+    const defaultGt = GENETICS_DEFAULTS[locus.key];
     for (const parentIdx of [1, 2]) {
       const sel = $(makeSelectId(parentIdx, locus.key));
-      const blank = locus.allowBlank ? `<option value="">—</option>` : "";
-      sel.innerHTML =
-        blank +
-        locus.genotypes
-          .map((gt) => `<option value="${gt}">${gt === "" ? "—" : gt}</option>`)
-          .join("");
+      sel.innerHTML = locus.genotypes
+        .map((gt) => {
+          const selected = gt === defaultGt ? " selected" : "";
+          const locusLabel =
+            locus.key === "KIT"
+              ? // nur Anzeige: 0 -> 00, ohne die interne Rechenlogik zu verändern
+                gt === "00"
+                ? "00"
+                : gt.replaceAll("0", "00")
+              : gt;
+          return `<option value="${gt}"${selected}>${locusLabel}</option>`;
+        })
+        .join("");
     }
   }
+  applyGeneticsDefaults();
 
   $("calcBtn").addEventListener("click", render);
   $("resetBtn").addEventListener("click", resetToDefaults);
@@ -1116,6 +1124,8 @@ function init() {
   const calc2ResetBtn = document.getElementById("calc2ResetBtn");
   const calc2Result = document.getElementById("calc2Result");
   const calc2Summary = document.getElementById("calc2Summary");
+  const calc2SummaryBody = document.getElementById("calc2SummaryBody");
+  const calc2More = document.getElementById("calc2More");
   const calc2Disciplines = document.getElementById("calc2Disciplines");
   const calc2Basics = document.getElementById("calc2Basics");
   const calc2Interieur = document.getElementById("calc2Interieur");
@@ -1127,18 +1137,11 @@ function init() {
     if (calc2Interieur) calc2Interieur.value = "";
     calc2Result.classList.add("muted");
     calc2Result.textContent = "Noch keine Berechnung hinterlegt.";
-    if (calc2Summary) {
-      calc2Summary.classList.add("muted");
-      calc2Summary.innerHTML = `
-        <div class="summaryHeader">
-          <span class="pill">Kurzfassung</span>
-          <label class="check">
-            <input id="calc2More" type="checkbox" />
-            mehr anzeigen
-          </label>
-        </div>
-        <p class="summaryPlaceholder">Nach „Berechnen“ erscheint hier die Kurzfassung zum Kopieren.</p>
-      `;
+    if (calc2More) calc2More.checked = false;
+    if (calc2Summary) calc2Summary.classList.add("muted");
+    if (calc2SummaryBody) {
+      calc2SummaryBody.className = "summaryPlaceholder";
+      calc2SummaryBody.textContent = "Nach „Berechnen“ erscheint hier die Kurzfassung zum Kopieren.";
     }
   }
   function calc2Render() {
@@ -1153,7 +1156,6 @@ function init() {
     const basicsByKey = indexPctItems(basics);
     const interByKey = new Map(inter.map((x) => [x.key, x]));
 
-    const missingSet = new Map(); // key -> Set(missingName)
     const computed = TURNIER_RULES.map((rule) => {
       // sanity check: always 1 discipline + 6 extras
       if (rule.extras.length !== 6 || (rule.interTraits?.length ?? 0) !== 3) {
@@ -1165,10 +1167,6 @@ function init() {
       return { rule, value: r.value, lkStr, interStr, missing: r.missing };
     });
 
-    for (const row of computed) {
-      if (row.missing.length > 0) missingSet.set(row.rule.name, new Set(row.missing));
-    }
-
     // Sortierung nach "Wert" absteigend. Fehlende Werte kommen nach unten.
     computed.sort((a, b) => {
       const av = a.value == null ? -Infinity : a.value;
@@ -1179,61 +1177,33 @@ function init() {
 
     const lines = computed.map((row) => formatTurnierLine(row.rule.name, row.value, row.lkStr, row.interStr));
 
-    const missingLines = [...missingSet.entries()]
-      .map(([discName, set]) => `- ${discName}: fehlt ${[...set].join(", ")}`)
-      .join("\n");
-
     calc2Result.classList.remove("muted");
     calc2Result.innerHTML = `
       <div class="pill">Turnierwerte</div>
       <pre style="white-space:pre-wrap;margin:10px 0 0 0">${escapeHtml(lines.join("\n") || "Keine Disziplinen erkannt.")}</pre>
-      ${
-        missingLines
-          ? `<details style="margin-top:10px"><summary class="muted">Fehlende/unerkannt Werte anzeigen</summary><pre style="white-space:pre-wrap;margin:10px 0 0 0">${escapeHtml(
-              missingLines
-            )}</pre></details>`
-          : ""
-      }
     `;
 
-    if (calc2Summary) {
-      const moreChecked = document.getElementById("calc2More")?.checked ?? false;
-      const filtered = applyKurzfassungFilter(computed, { mode: moreChecked ? "more" : "default" });
-      const summaryLines = filtered
-        .map((row) =>
-          formatKurzfassungLine(
-            abbrForDisciplineName(row.rule.name),
-            row.value,
-            row.lkStr,
-            row.interStr
-          )
-        )
-        .join("\n");
+    const moreChecked = calc2More?.checked ?? false;
+    const filtered = applyKurzfassungFilter(computed, { mode: moreChecked ? "more" : "default" });
+    const summaryLines = filtered
+      .map((row) =>
+        formatKurzfassungLine(abbrForDisciplineName(row.rule.name), row.value, row.lkStr, row.interStr)
+      )
+      .join("\n");
 
-      calc2Summary.classList.remove("muted");
-      calc2Summary.innerHTML = `
-        <div class="summaryHeader">
-          <span class="pill">Kurzfassung</span>
-          <label class="check">
-            <input id="calc2More" type="checkbox" ${moreChecked ? "checked" : ""} />
-            mehr anzeigen
-          </label>
-        </div>
-        <pre style="white-space:pre-wrap;margin:0">${escapeHtml(summaryLines || "—")}</pre>
-      `;
+    if (calc2Summary) calc2Summary.classList.remove("muted");
+    if (calc2SummaryBody) {
+      calc2SummaryBody.className = "";
+      calc2SummaryBody.innerHTML = `<pre style="white-space:pre-wrap;margin:0">${escapeHtml(summaryLines || "—")}</pre>`;
     }
   }
 
   if (calc2Btn) calc2Btn.addEventListener("click", calc2Render);
   if (calc2ResetBtn) calc2ResetBtn.addEventListener("click", calc2Reset);
-  calc2Summary?.addEventListener("change", (e) => {
-    if (e.target instanceof HTMLInputElement && e.target.id === "calc2More") calc2Render();
-  });
+  if (calc2More) calc2More.addEventListener("change", calc2Render);
 
   initTabs();
   calc2Reset();
-
-  resetToDefaults();
 }
 
 document.addEventListener("DOMContentLoaded", init);
