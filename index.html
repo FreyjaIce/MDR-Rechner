@@ -239,12 +239,13 @@
             <h2>Pferdedatenbank (Excel)</h2>
             <div class="callout" style="margin-bottom:12px">
               Öffne deine <code>pferde.xlsx</code> oder lade die Vorlage herunter. Spalten:
-              <code>name</code>, <code>geschlecht</code>, <code>vater</code>, <code>vater_status</code>,
-              <code>mutter</code>, <code>mutter_status</code>, <code>im_stall</code>, <code>notizen</code>.<br /><br />
+              <code>Name</code>, <code>Geschlecht</code>, <code>Status</code>, <code>Vater_Name</code>,
+              <code>Vater_Notiz</code>, <code>Mutter_Name</code>, <code>Mutter_Notiz</code>.<br /><br />
               <b>Eltern-Verknüpfung:</b> Vater/Mutter per <b>Name</b> eintragen (z. B. <code>Donnerhall</code>).
-              Wenn leer: <code>foundation</code> = Stammbaum-Ende ·
+              Wenn leer: in <code>Vater_Notiz</code>/<code>Mutter_Notiz</code>:
+              <code>foundation</code> = Stammbaum-Ende ·
               <code>fortsetzung</code> = Vorfahren existieren, nicht eingetragen ·
-              <code>im_stall = ja</code> = in der Dropdown-Auswahl.
+              <code>Status = ja</code> = in der Dropdown-Auswahl.
             </div>
 
             <div class="actions" style="flex-wrap:wrap">
@@ -312,6 +313,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="./app.js?v=5" defer></script>
-    <script src="./stammbaum.js?v=3" defer></script>
+    <script src="./stammbaum.js?v=4" defer></script>
   </body>
 </html>

@@ -4,14 +4,13 @@ const PEDIGREE_GENERATIONS = 8;
 const SHEET_NAME = "Pferde";
 
 const EXCEL_COLUMNS = [
-  "name",
-  "geschlecht",
-  "vater",
-  "vater_status",
-  "mutter",
-  "mutter_status",
-  "im_stall",
-  "notizen",
+  "Name",
+  "Geschlecht",
+  "Status",
+  "Vater_Name",
+  "Vater_Notiz",
+  "Mutter_Name",
+  "Mutter_Notiz",
 ];
 
 const EXAMPLE_HORSES = [
@@ -22,8 +21,7 @@ const EXAMPLE_HORSES = [
     vater_status: "",
     mutter: "Mondlicht",
     mutter_status: "",
-    im_stall: "ja",
-    notizen: "Beispiel – im Stall",
+    im_stall: true,
   },
   {
     name: "Blitzfrieden",
@@ -32,8 +30,7 @@ const EXAMPLE_HORSES = [
     vater_status: "",
     mutter: "Mondlicht",
     mutter_status: "",
-    im_stall: "ja",
-    notizen: "Vollgeschwister von Sturmwind (Inzucht-Test)",
+    im_stall: true,
   },
   {
     name: "Donnerhall",
@@ -42,38 +39,34 @@ const EXAMPLE_HORSES = [
     vater_status: "",
     mutter: "Rose",
     mutter_status: "",
-    im_stall: "nein",
-    notizen: "",
+    im_stall: false,
   },
   {
     name: "Mondlicht",
     geschlecht: "stute",
-    vater: "",
+    vater: null,
     vater_status: "fortsetzung",
-    mutter: "",
+    mutter: null,
     mutter_status: "foundation",
-    im_stall: "nein",
-    notizen: "Vater existiert im Spiel, nicht eingetragen",
+    im_stall: false,
   },
   {
     name: "Blitz",
     geschlecht: "hengst",
-    vater: "",
+    vater: null,
     vater_status: "foundation",
-    mutter: "",
+    mutter: null,
     mutter_status: "foundation",
-    im_stall: "nein",
-    notizen: "Foundation-Hengst",
+    im_stall: false,
   },
   {
     name: "Rose",
     geschlecht: "stute",
-    vater: "",
+    vater: null,
     vater_status: "foundation",
-    mutter: "",
+    mutter: null,
     mutter_status: "foundation",
-    im_stall: "nein",
-    notizen: "Foundation-Stute",
+    im_stall: false,
   },
 ];
 
@@ -175,11 +168,19 @@ function updateFileStatus() {
   el.textContent = `${name}${unsaved}`;
 }
 
+function rowVal(row, ...keys) {
+  for (const key of keys) {
+    const val = row[key];
+    if (val != null && val !== "") return val;
+  }
+  return "";
+}
+
 function buildIdToNameMap(rows) {
   const map = new Map();
   for (const row of rows) {
     const id = parseOptionalId(row.id);
-    const name = String(row.name ?? "").trim();
+    const name = String(rowVal(row, "Name", "name") ?? "").trim();
     if (id && name) map.set(id, name);
   }
   return map;
@@ -187,7 +188,9 @@ function buildIdToNameMap(rows) {
 
 function parseParentFromRow(row, side, idToName) {
   const isSire = side === "sire";
-  const name = String(row[isSire ? "vater" : "mutter"] ?? "").trim();
+  const name = String(
+    rowVal(row, isSire ? "Vater_Name" : "Mutter_Name", isSire ? "vater" : "mutter") ?? ""
+  ).trim();
   if (name) return { name, status: "" };
 
   const legacyId = parseOptionalId(row[isSire ? "vater_id" : "mutter_id"]);
@@ -195,12 +198,14 @@ function parseParentFromRow(row, side, idToName) {
     return { name: idToName.get(legacyId), status: "" };
   }
 
-  const status = normalizeParentStatus(row[isSire ? "vater_status" : "mutter_status"]);
+  const status = normalizeParentStatus(
+    rowVal(row, isSire ? "Vater_Notiz" : "Mutter_Notiz", isSire ? "vater_status" : "mutter_status")
+  );
   return { name: null, status: status || "foundation" };
 }
 
 function rowToHorse(row, idToName) {
-  const name = String(row.name ?? "").trim();
+  const name = String(rowVal(row, "Name", "name") ?? "").trim();
   if (!name) return null;
 
   const vater = parseParentFromRow(row, "sire", idToName);
@@ -208,13 +213,12 @@ function rowToHorse(row, idToName) {
 
   return {
     name,
-    geschlecht: normalizeGeschlecht(row.geschlecht),
+    geschlecht: normalizeGeschlecht(rowVal(row, "Geschlecht", "geschlecht")),
     vater: vater.name,
     vater_status: vater.name ? "" : vater.status,
     mutter: mutter.name,
     mutter_status: mutter.name ? "" : mutter.status,
-    im_stall: parseBoolJa(row.im_stall),
-    notizen: String(row.notizen ?? "").trim(),
+    im_stall: parseBoolJa(rowVal(row, "Status", "im_stall")),
   };
 }
 
@@ -242,14 +246,13 @@ function findDuplicateNames(horses) {
 
 function horseToRow(h) {
   return {
-    name: h.name,
-    geschlecht: h.geschlecht,
-    vater: h.vater ?? "",
-    vater_status: h.vater ? "" : h.vater_status || "foundation",
-    mutter: h.mutter ?? "",
-    mutter_status: h.mutter ? "" : h.mutter_status || "foundation",
-    im_stall: h.im_stall ? "ja" : "nein",
-    notizen: h.notizen ?? "",
+    Name: h.name,
+    Geschlecht: h.geschlecht,
+    Status: h.im_stall ? "ja" : "nein",
+    Vater_Name: h.vater ?? "",
+    Vater_Notiz: h.vater ? "" : h.vater_status || "foundation",
+    Mutter_Name: h.mutter ?? "",
+    Mutter_Notiz: h.mutter ? "" : h.mutter_status || "foundation",
   };
 }
 
@@ -396,17 +399,7 @@ async function saveExcelFile() {
 }
 
 function downloadTemplate() {
-  const wb = writeWorkbook(
-    EXAMPLE_HORSES.map((h) => ({
-      ...h,
-      im_stall: parseBoolJa(h.im_stall),
-      vater: h.vater || null,
-      mutter: h.mutter || null,
-      vater_status: h.vater ? "" : h.vater_status,
-      mutter_status: h.mutter ? "" : h.mutter_status,
-      notizen: h.notizen ?? "",
-    }))
-  );
+  const wb = writeWorkbook(EXAMPLE_HORSES);
   downloadBlob(workbookToBlob(wb), "pferde-vorlage.xlsx");
 }
 
@@ -673,10 +666,6 @@ function renderHorseEditor() {
         Im Stall (in Dropdown-Auswahl)
       </label>
     </div>
-    <div class="formRow">
-      <label for="pedEditNotizen">Notizen</label>
-      <textarea id="pedEditNotizen" class="textarea" rows="3">${stEscapeHtml(horse.notizen)}</textarea>
-    </div>
     <div class="actions">
       <button id="pedSaveHorseBtn" class="primary" type="button">Änderungen übernehmen</button>
       <button id="pedDeleteHorseBtn" class="secondary" type="button">Löschen</button>
@@ -738,7 +727,6 @@ function saveHorseFromEditor() {
   horse.mutter = mutter.name;
   horse.mutter_status = mutter.status;
   horse.im_stall = document.getElementById("pedEditImStall")?.checked ?? false;
-  horse.notizen = document.getElementById("pedEditNotizen")?.value.trim() ?? "";
 
   state.horses.sort((a, b) => a.name.localeCompare(b.name, "de"));
   markDirty();
@@ -781,7 +769,6 @@ function addNewHorse() {
     mutter: null,
     mutter_status: "foundation",
     im_stall: true,
-    notizen: "",
   };
   state.horses.push(horse);
   state.horses.sort((a, b) => a.name.localeCompare(b.name, "de"));
