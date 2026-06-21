@@ -26,6 +26,16 @@ const EXAMPLE_HORSES = [
     notizen: "Beispiel – im Stall",
   },
   {
+    name: "Blitzfrieden",
+    geschlecht: "hengst",
+    vater: "Donnerhall",
+    vater_status: "",
+    mutter: "Mondlicht",
+    mutter_status: "",
+    im_stall: "ja",
+    notizen: "Vollgeschwister von Sturmwind (Inzucht-Test)",
+  },
+  {
     name: "Donnerhall",
     geschlecht: "hengst",
     vater: "Blitz",
@@ -415,12 +425,99 @@ function resolveParent(horse, side, byName) {
   return { kind: "foundation", label: "Foundation" };
 }
 
-function renderPedigreeNode(node, depth) {
+function collectAncestorEntries(horse, byName, maxGen) {
+  const entries = [];
+
+  function walk(h, gen) {
+    if (gen > maxGen) return;
+    for (const side of ["sire", "dam"]) {
+      const parent = resolveParent(h, side, byName);
+      if (parent.kind !== "horse") continue;
+      entries.push({
+        name: parent.horse.name,
+        nameKey: normalizeNameKey(parent.horse.name),
+        generation: gen,
+      });
+      walk(parent.horse, gen + 1);
+    }
+  }
+
+  walk(horse, 1);
+  return entries;
+}
+
+function groupAncestorGenerations(entries) {
+  const map = new Map();
+  for (const e of entries) {
+    if (!map.has(e.nameKey)) map.set(e.nameKey, { name: e.name, generations: new Set() });
+    map.get(e.nameKey).generations.add(e.generation);
+  }
+  return map;
+}
+
+function formatGenerationSet(gens) {
+  const sorted = [...gens].sort((a, b) => a - b);
+  return sorted.map((g) => `Gen ${g}`).join(", ");
+}
+
+function analyzePairInbreeding(stallion, mare, horses) {
+  const byName = horsesByName(horses);
+  const stallionKey = normalizeNameKey(stallion.name);
+  const mareKey = normalizeNameKey(mare.name);
+
+  const directIssues = [];
+  if (stallionKey === mareKey) {
+    directIssues.push("Stute und Hengst sind dasselbe Pferd.");
+  }
+
+  const sireEntries = collectAncestorEntries(stallion, byName, PEDIGREE_GENERATIONS);
+  const damEntries = collectAncestorEntries(mare, byName, PEDIGREE_GENERATIONS);
+  const sireMap = groupAncestorGenerations(sireEntries);
+  const damMap = groupAncestorGenerations(damEntries);
+
+  if (sireMap.has(mareKey)) {
+    directIssues.push(
+      `„${mare.name}" (Stute) ist Vorfahre von „${stallion.name}" (${formatGenerationSet(sireMap.get(mareKey).generations)}).`
+    );
+  }
+  if (damMap.has(stallionKey)) {
+    directIssues.push(
+      `„${stallion.name}" (Hengst) ist Vorfahre von „${mare.name}" (${formatGenerationSet(damMap.get(stallionKey).generations)}).`
+    );
+  }
+
+  const overlaps = [];
+  for (const [key, sireData] of sireMap.entries()) {
+    const damData = damMap.get(key);
+    if (!damData) continue;
+    overlaps.push({
+      name: sireData.name,
+      nameKey: key,
+      sireGenerations: sireData.generations,
+      damGenerations: damData.generations,
+      minGen: Math.min(...sireData.generations, ...damData.generations),
+    });
+  }
+  overlaps.sort((a, b) => a.minGen - b.minGen || a.name.localeCompare(b.name, "de"));
+
+  const overlapKeys = new Set(overlaps.map((o) => o.nameKey));
+  return { directIssues, overlaps, overlapKeys };
+}
+
+function renderPedigreeNode(node, depth, highlightKeys = null) {
   if (depth > PEDIGREE_GENERATIONS) return "";
 
   if (node.kind === "horse") {
     const h = node.horse;
-    const cls = h.im_stall ? "pedNode pedHorse pedInStall" : "pedNode pedHorse";
+    const isOverlap = highlightKeys?.has(normalizeNameKey(h.name));
+    const cls = [
+      "pedNode",
+      "pedHorse",
+      h.im_stall ? "pedInStall" : "",
+      isOverlap ? "pedOverlap" : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
     let html = `<div class="${cls}">
       <div class="pedName">${stEscapeHtml(h.name)}</div>
       <div class="pedMeta">${stEscapeHtml(geschlechtLabel(h.geschlecht))}</div>
@@ -431,8 +528,8 @@ function renderPedigreeNode(node, depth) {
       const sire = resolveParent(h, "sire", byName);
       const dam = resolveParent(h, "dam", byName);
       html += `<div class="pedParents">
-        <div class="pedBranch pedBranchSire">${renderPedigreeNode(sire, depth + 1)}</div>
-        <div class="pedBranch pedBranchDam">${renderPedigreeNode(dam, depth + 1)}</div>
+        <div class="pedBranch pedBranchSire">${renderPedigreeNode(sire, depth + 1, highlightKeys)}</div>
+        <div class="pedBranch pedBranchDam">${renderPedigreeNode(dam, depth + 1, highlightKeys)}</div>
       </div>`;
     }
     return html;
@@ -450,7 +547,7 @@ function renderPedigreeNode(node, depth) {
   return `<div class="pedNode pedMissing"><div class="pedName">${stEscapeHtml(node.label)}</div></div>`;
 }
 
-function renderPedigreeTree(focusHorse) {
+function renderPedigreeTree(focusHorse, highlightKeys = null) {
   const host = document.getElementById("pedTree");
   if (!host) return;
 
@@ -462,7 +559,20 @@ function renderPedigreeTree(focusHorse) {
 
   host.classList.remove("muted");
   const root = { kind: "horse", horse: focusHorse };
-  host.innerHTML = `<div class="pedScroll"><div class="pedTreeRoot">${renderPedigreeNode(root, 0)}</div></div>`;
+  host.innerHTML = `<div class="pedScroll"><div class="pedTreeRoot">${renderPedigreeNode(root, 0, highlightKeys)}</div></div>`;
+}
+
+function renderPedigreeInto(host, horse, title, highlightKeys = null) {
+  if (!host) return;
+  if (!horse) {
+    host.innerHTML = `<p class="muted">—</p>`;
+    return;
+  }
+  const root = { kind: "horse", horse };
+  host.innerHTML = `
+    <h3>${stEscapeHtml(title)}</h3>
+    <div class="pedScroll"><div class="pedTreeRoot">${renderPedigreeNode(root, 0, highlightKeys)}</div></div>
+  `;
 }
 
 function renderHorseList() {
@@ -680,6 +790,116 @@ function addNewHorse() {
   renderAll();
 }
 
+function stallHorsesByRole(role) {
+  const stall = state.horses.filter((h) => h.im_stall);
+  if (role === "mare") return stall.filter((h) => h.geschlecht === "stute");
+  if (role === "stallion") return stall.filter((h) => h.geschlecht === "hengst");
+  return stall;
+}
+
+function renderPairSelects() {
+  const mareSel = document.getElementById("pedPairMare");
+  const stallionSel = document.getElementById("pedPairStallion");
+  if (!mareSel || !stallionSel) return;
+
+  const prevMare = mareSel.value;
+  const prevStallion = stallionSel.value;
+  const mares = stallHorsesByRole("mare");
+  const stallions = stallHorsesByRole("stallion");
+
+  mareSel.innerHTML =
+    `<option value="">— Stute wählen —</option>` +
+    mares
+      .map((h) => {
+        const sel = h.name === prevMare ? " selected" : "";
+        return `<option value="${stEscapeHtml(h.name)}"${sel}>${stEscapeHtml(h.name)}</option>`;
+      })
+      .join("");
+
+  stallionSel.innerHTML =
+    `<option value="">— Hengst wählen —</option>` +
+    stallions
+      .map((h) => {
+        const sel = h.name === prevStallion ? " selected" : "";
+        return `<option value="${stEscapeHtml(h.name)}"${sel}>${stEscapeHtml(h.name)}</option>`;
+      })
+      .join("");
+
+  if (prevMare && mares.some((h) => h.name === prevMare)) mareSel.value = prevMare;
+  if (prevStallion && stallions.some((h) => h.name === prevStallion)) stallionSel.value = prevStallion;
+}
+
+function getPairAnalysis() {
+  const mareName = document.getElementById("pedPairMare")?.value || "";
+  const stallionName = document.getElementById("pedPairStallion")?.value || "";
+  if (!mareName || !stallionName) return null;
+
+  const mare = findHorseByName(state.horses, mareName);
+  const stallion = findHorseByName(state.horses, stallionName);
+  if (!mare || !stallion) return null;
+
+  return { mare, stallion, ...analyzePairInbreeding(stallion, mare, state.horses) };
+}
+
+function renderInbreedingCheck(pair) {
+  const host = document.getElementById("pedInbreedingResult");
+  const treesHost = document.getElementById("pedPairTrees");
+  if (!host) return;
+
+  if (!pair) {
+    host.className = "pedInbreedingResult muted";
+    host.textContent = "Wähle Stute und Hengst für die Inzuchtprüfung.";
+    treesHost?.classList.add("hidden");
+    return;
+  }
+
+  const { mare, stallion, directIssues, overlaps, overlapKeys } = pair;
+  const hasWarning = directIssues.length > 0 || overlaps.length > 0;
+
+  if (!hasWarning) {
+    host.className = "pedInbreedingResult pedInbreedingOk";
+    host.innerHTML = `<b>Keine Inzucht erkannt</b> zwischen „${stEscapeHtml(stallion.name)}" und „${stEscapeHtml(mare.name)}" (bis Gen ${PEDIGREE_GENERATIONS}).`;
+  } else {
+    host.className = "pedInbreedingResult pedInbreedingWarn";
+    let html = `<b>Inzuchtwarnung</b> für „${stEscapeHtml(stallion.name)}" × „${stEscapeHtml(mare.name)}":`;
+
+    if (directIssues.length > 0) {
+      html += `<ul>${directIssues.map((d) => `<li>${stEscapeHtml(d)}</li>`).join("")}</ul>`;
+    }
+
+    if (overlaps.length > 0) {
+      html += `<ul>${overlaps
+        .map(
+          (o) =>
+            `<li><b>${stEscapeHtml(o.name)}</b> — Hengst-Linie: ${formatGenerationSet(o.sireGenerations)} · Stuten-Linie: ${formatGenerationSet(o.damGenerations)}</li>`
+        )
+        .join("")}</ul>`;
+    }
+
+    host.innerHTML = html;
+  }
+
+  if (treesHost) {
+    treesHost.classList.remove("hidden");
+    treesHost.innerHTML = `
+      <div class="pedPairPanel" id="pedPairTreeStallion"></div>
+      <div class="pedPairPanel" id="pedPairTreeMare"></div>
+    `;
+    renderPedigreeInto(
+      document.getElementById("pedPairTreeStallion"),
+      stallion,
+      `Hengst: ${stallion.name}`,
+      overlapKeys
+    );
+    renderPedigreeInto(
+      document.getElementById("pedPairTreeMare"),
+      mare,
+      `Stute: ${mare.name}`,
+      overlapKeys
+    );
+  }
+}
+
 function renderFocusSelect() {
   const sel = document.getElementById("pedFocusSelect");
   if (!sel) return;
@@ -708,10 +928,14 @@ function renderAll() {
   renderHorseList();
   renderHorseEditor();
   renderFocusSelect();
+  renderPairSelects();
+
+  const pair = getPairAnalysis();
+  renderInbreedingCheck(pair);
 
   const focusName = document.getElementById("pedFocusSelect")?.value || null;
   const focusHorse = focusName ? findHorseByName(state.horses, focusName) : null;
-  renderPedigreeTree(focusHorse);
+  renderPedigreeTree(focusHorse, pair?.overlapKeys ?? null);
 }
 
 function initStammbaum() {
@@ -721,6 +945,8 @@ function initStammbaum() {
   document.getElementById("pedAddBtn")?.addEventListener("click", addNewHorse);
   document.getElementById("pedFileInput")?.addEventListener("change", onFileInputChange);
   document.getElementById("pedFocusSelect")?.addEventListener("change", renderAll);
+  document.getElementById("pedPairMare")?.addEventListener("change", renderAll);
+  document.getElementById("pedPairStallion")?.addEventListener("change", renderAll);
 
   updateFileStatus();
   renderAll();

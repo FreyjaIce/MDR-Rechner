@@ -226,6 +226,49 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation M
 .pedSwatchHorse{background:rgba(124,58,237,.35)}
 .pedSwatchFoundation{background:rgba(34,197,94,.25)}
 .pedSwatchFortsetzung{background:rgba(251,191,36,.25)}
+.pedSwatchOverlap{background:rgba(239,68,68,.45)}
+
+.pedPairCard{margin-top:16px}
+.pedInbreedingResult{
+  margin-top:12px;
+  padding:10px 12px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  line-height:1.45;
+  font-size:13px;
+}
+.pedInbreedingOk{
+  border-color:rgba(34,197,94,.45);
+  background:rgba(34,197,94,.08);
+  color:#9ff1b8;
+}
+.pedInbreedingWarn{
+  border-color:rgba(239,68,68,.45);
+  background:rgba(239,68,68,.1);
+  color:#ffb4b4;
+}
+.pedInbreedingResult ul{margin:8px 0 0 18px;padding:0}
+.pedInbreedingResult li{margin:4px 0}
+.pedPairTrees{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+  margin-top:14px;
+}
+@media (max-width:900px){.pedPairTrees{grid-template-columns:1fr}}
+.pedPairTrees.hidden{display:none}
+.pedPairPanel{
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:10px;
+  background:rgba(255,255,255,.03);
+}
+.pedPairPanel h3{
+  margin:0 0 8px 0;
+  font-size:13px;
+  color:var(--muted);
+  font-weight:600;
+}
 
 .pedTreeHost{min-height:120px}
 .pedScroll{
@@ -252,6 +295,11 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation M
 .pedNode .pedMeta{font-size:11px;color:var(--muted);margin-top:2px}
 .pedHorse{border-color:rgba(124,58,237,.35)}
 .pedInStall{box-shadow:0 0 0 1px rgba(124,58,237,.45) inset}
+.pedOverlap{
+  border-color:rgba(239,68,68,.75);
+  background:rgba(239,68,68,.15);
+  box-shadow:0 0 0 1px rgba(239,68,68,.55) inset;
+}
 .pedFoundation{border-color:rgba(34,197,94,.45);background:rgba(34,197,94,.08)}
 .pedFortsetzung{border-color:rgba(251,191,36,.45);background:rgba(251,191,36,.08)}
 .pedMissing{border-color:rgba(239,68,68,.35);background:rgba(239,68,68,.08)}

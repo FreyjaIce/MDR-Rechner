@@ -257,6 +257,28 @@
             <p id="pedFileStatus" class="muted" style="margin:10px 0 0 0">Keine Datei geöffnet</p>
           </section>
 
+          <section class="card pedPairCard">
+            <h2>Verpaarung planen</h2>
+            <p class="muted" style="margin:0 0 12px 0;font-size:13px">
+              Prüft gemeinsame Vorfahren zwischen Stute und Hengst (bis zu 8 Generationen). Inzucht innerhalb
+              eines Elternteils allein wird nicht gewertet.
+            </p>
+            <div class="twoCol">
+              <div class="formRow">
+                <label for="pedPairMare">Stute (Im Stall)</label>
+                <select id="pedPairMare"></select>
+              </div>
+              <div class="formRow">
+                <label for="pedPairStallion">Hengst (Im Stall)</label>
+                <select id="pedPairStallion"></select>
+              </div>
+            </div>
+            <div id="pedInbreedingResult" class="pedInbreedingResult muted">
+              Wähle Stute und Hengst für die Inzuchtprüfung.
+            </div>
+            <div id="pedPairTrees" class="pedPairTrees hidden"></div>
+          </section>
+
           <div class="pedLayout">
             <section class="card">
               <h2>Pferde verwalten</h2>
@@ -274,6 +296,7 @@
                 <span class="pedLegendItem"><span class="pedSwatch pedSwatchHorse"></span> eingetragen</span>
                 <span class="pedLegendItem"><span class="pedSwatch pedSwatchFoundation"></span> Foundation</span>
                 <span class="pedLegendItem"><span class="pedSwatch pedSwatchFortsetzung"></span> … Fortsetzung</span>
+                <span class="pedLegendItem"><span class="pedSwatch pedSwatchOverlap"></span> gemeinsamer Vorfahr</span>
               </div>
               <div id="pedTree" class="pedTreeHost muted">Wähle ein Pferd aus deinem Stall.</div>
             </section>
@@ -289,6 +312,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="./app.js?v=5" defer></script>
-    <script src="./stammbaum.js?v=2" defer></script>
+    <script src="./stammbaum.js?v=3" defer></script>
   </body>
 </html>
