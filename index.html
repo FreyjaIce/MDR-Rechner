@@ -17,6 +17,7 @@
       <nav class="tabs" aria-label="Rechner Navigation">
         <button id="tab-color" class="tab active" type="button" data-page="color">Farbgenetik</button>
         <button id="tab-calc2" class="tab" type="button" data-page="calc2">Turnierwerte</button>
+        <button id="tab-stammbaum" class="tab" type="button" data-page="stammbaum">Stammbaum</button>
       </nav>
 
       <main>
@@ -232,14 +233,62 @@
             </div>
           </section>
         </section>
+
+        <section id="page-stammbaum" class="page hidden">
+          <section class="card">
+            <h2>Pferdedatenbank (Excel)</h2>
+            <div class="callout" style="margin-bottom:12px">
+              Öffne deine <code>pferde.xlsx</code> oder lade die Vorlage herunter. Spalten:
+              <code>name</code>, <code>geschlecht</code>, <code>vater</code>, <code>vater_status</code>,
+              <code>mutter</code>, <code>mutter_status</code>, <code>im_stall</code>, <code>notizen</code>.<br /><br />
+              <b>Eltern-Verknüpfung:</b> Vater/Mutter per <b>Name</b> eintragen (z. B. <code>Donnerhall</code>).
+              Wenn leer: <code>foundation</code> = Stammbaum-Ende ·
+              <code>fortsetzung</code> = Vorfahren existieren, nicht eingetragen ·
+              <code>im_stall = ja</code> = in der Dropdown-Auswahl.
+            </div>
+
+            <div class="actions" style="flex-wrap:wrap">
+              <button id="pedOpenBtn" class="primary" type="button">Excel öffnen</button>
+              <button id="pedSaveBtn" class="secondary" type="button">Speichern</button>
+              <button id="pedTemplateBtn" class="secondary" type="button">Vorlage herunterladen</button>
+              <button id="pedAddBtn" class="secondary" type="button">Pferd hinzufügen</button>
+              <input id="pedFileInput" type="file" accept=".xlsx" hidden />
+            </div>
+            <p id="pedFileStatus" class="muted" style="margin:10px 0 0 0">Keine Datei geöffnet</p>
+          </section>
+
+          <div class="pedLayout">
+            <section class="card">
+              <h2>Pferde verwalten</h2>
+              <div id="pedHorseList" class="pedList"></div>
+              <div id="pedEditor" style="margin-top:14px"></div>
+            </section>
+
+            <section class="card">
+              <h2>Stammbaum (8 Generationen)</h2>
+              <div class="formRow">
+                <label for="pedFocusSelect">Fokuspferd (nur „Im Stall“)</label>
+                <select id="pedFocusSelect"></select>
+              </div>
+              <div class="pedLegend">
+                <span class="pedLegendItem"><span class="pedSwatch pedSwatchHorse"></span> eingetragen</span>
+                <span class="pedLegendItem"><span class="pedSwatch pedSwatchFoundation"></span> Foundation</span>
+                <span class="pedLegendItem"><span class="pedSwatch pedSwatchFortsetzung"></span> … Fortsetzung</span>
+              </div>
+              <div id="pedTree" class="pedTreeHost muted">Wähle ein Pferd aus deinem Stall.</div>
+            </section>
+          </div>
+        </section>
       </main>
 
       <footer class="footer muted">
-        Version 4 · Wenn Änderungen fehlen: alle drei Dateien (<code>index.html</code>, <code>app.js</code>,
-        <code>styles.css</code>) im Repo prüfen und Seite mit Strg+F5 neu laden.
+        Version 5 · Wenn Änderungen fehlen: alle Dateien (<code>index.html</code>, <code>app.js</code>,
+        <code>stammbaum.js</code>, <code>styles.css</code>) im Repo prüfen und Seite mit Strg+F5 neu laden.
       </footer>
     </div>
 
-    <script src="./app.js?v=4" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="./app.js?v=5" defer></script>
+    <script src="./stammbaum.js?v=2" defer></script>
   </body>
 </html>
