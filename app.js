@@ -1091,21 +1091,18 @@ function init() {
 
   // Simple "pages" (Tabs) via show/hide
   function showPage(pageKey) {
-    const isColor = pageKey !== "calc2";
+    const pages = document.querySelectorAll(".page");
+    const tabs = document.querySelectorAll(".tab[data-page]");
 
-    const pageColor = document.getElementById("page-color");
-    const pageCalc2 = document.getElementById("page-calc2");
-    const tabColor = document.getElementById("tab-color");
-    const tabCalc2 = document.getElementById("tab-calc2");
+    pages.forEach((page) => {
+      const key = page.id.replace(/^page-/, "");
+      page.classList.toggle("hidden", key !== pageKey);
+    });
+    tabs.forEach((tab) => {
+      tab.classList.toggle("active", tab.dataset.page === pageKey);
+    });
 
-    if (pageColor) pageColor.classList.toggle("hidden", !isColor);
-    if (pageCalc2) pageCalc2.classList.toggle("hidden", isColor);
-
-    if (tabColor) tabColor.classList.toggle("active", isColor);
-    if (tabCalc2) tabCalc2.classList.toggle("active", !isColor);
-
-    // optional deep-link
-    const hash = isColor ? "#color" : "#calc2";
+    const hash = `#${pageKey === "color" ? "color" : pageKey}`;
     if (location.hash !== hash) history.replaceState(null, "", hash);
   }
 
@@ -1115,8 +1112,9 @@ function init() {
       btn.addEventListener("click", () => showPage(btn.dataset.page));
     });
 
-    // default from hash
-    showPage(location.hash === "#calc2" ? "calc2" : "color");
+    const hash = location.hash.replace("#", "");
+    const valid = ["color", "calc2", "stammbaum"];
+    showPage(valid.includes(hash) ? hash : "color");
   }
 
   // Placeholder calculator 2 wiring

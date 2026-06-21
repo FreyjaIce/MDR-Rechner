@@ -22,6 +22,7 @@ body{
 }
 
 .container{max-width:1100px;margin:0 auto;padding:24px}
+.container:has(#page-stammbaum:not(.hidden)){max-width:1400px}
 .header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px}
 h1{font-size:28px;margin:0 0 6px 0;letter-spacing:.2px}
 h2{font-size:18px;margin:0 0 12px 0}
@@ -86,6 +87,8 @@ h3{font-size:14px;margin:10px 0 10px 0;color:var(--muted);font-weight:600}
   margin-bottom:8px;
 }
 .summaryHeader .pill{margin-right:0}
+.summaryHeader .check{color:var(--text)}
+#calc2More{width:16px;height:16px;flex-shrink:0}
 .summaryPlaceholder{margin:0}
 
 .formRow{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
@@ -165,3 +168,108 @@ button.secondary:hover{background:rgba(255,255,255,.09)}
 .help summary{cursor:pointer;color:var(--muted)}
 .footer{margin-top:14px;font-size:12px}
 code{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
+
+.textInput{
+  width:100%;
+  padding:10px 10px;
+  background: var(--panel2);
+  border:1px solid var(--border);
+  border-radius:12px;
+  color:var(--text);
+  outline:none;
+}
+.textInput:focus{border-color:rgba(124,58,237,.8); box-shadow:0 0 0 4px rgba(124,58,237,.18)}
+
+.pedLayout{
+  display:grid;
+  grid-template-columns: 380px 1fr;
+  gap:16px;
+  margin-top:16px;
+}
+@media (max-width: 1000px){.pedLayout{grid-template-columns:1fr}}
+
+.pedList{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  max-height:280px;
+  overflow:auto;
+}
+.pedListItem{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:2px;
+  text-align:left;
+  padding:8px 10px;
+  border-radius:10px;
+}
+.pedListItemActive{
+  border-color: rgba(124,58,237,.55);
+  background: rgba(124,58,237,.14);
+}
+.pedListName{font-size:14px;color:var(--text)}
+.pedListMeta{font-size:12px;color:var(--muted)}
+
+.pedLegend{
+  display:flex;
+  flex-wrap:wrap;
+  gap:12px;
+  margin:8px 0 12px 0;
+  font-size:12px;
+  color:var(--muted);
+}
+.pedLegendItem{display:inline-flex;align-items:center;gap:6px}
+.pedSwatch{
+  width:12px;height:12px;border-radius:3px;border:1px solid var(--border);
+}
+.pedSwatchHorse{background:rgba(124,58,237,.35)}
+.pedSwatchFoundation{background:rgba(34,197,94,.25)}
+.pedSwatchFortsetzung{background:rgba(251,191,36,.25)}
+
+.pedTreeHost{min-height:120px}
+.pedScroll{
+  overflow:auto;
+  max-width:100%;
+  padding-bottom:8px;
+}
+.pedTreeRoot{
+  display:flex;
+  align-items:center;
+  gap:0;
+  min-width:max-content;
+}
+.pedNode{
+  min-width:110px;
+  max-width:140px;
+  padding:8px 10px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:rgba(255,255,255,.05);
+  font-size:12px;
+}
+.pedNode .pedName{font-weight:600;color:var(--text);line-height:1.25}
+.pedNode .pedMeta{font-size:11px;color:var(--muted);margin-top:2px}
+.pedHorse{border-color:rgba(124,58,237,.35)}
+.pedInStall{box-shadow:0 0 0 1px rgba(124,58,237,.45) inset}
+.pedFoundation{border-color:rgba(34,197,94,.45);background:rgba(34,197,94,.08)}
+.pedFortsetzung{border-color:rgba(251,191,36,.45);background:rgba(251,191,36,.08)}
+.pedMissing{border-color:rgba(239,68,68,.35);background:rgba(239,68,68,.08)}
+.pedParents{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:8px;
+  margin-left:10px;
+  padding-left:10px;
+  border-left:1px solid var(--border);
+}
+.pedBranch{display:flex;align-items:center}
+.pedBranchSire::before,
+.pedBranchDam::before{
+  content:"";
+  width:10px;
+  border-top:1px solid var(--border);
+  margin-right:0;
+  flex-shrink:0;
+}
