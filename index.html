@@ -274,18 +274,22 @@
                 <select id="pedPairStallion"></select>
               </div>
             </div>
-            <div class="formRow" style="margin-top:12px">
-              <label for="pedGenDepth">Prüftiefe</label>
-              <select id="pedGenDepth">
-                <option value="4">4 Generationen</option>
-                <option value="16" selected>16 Generationen</option>
-              </select>
-            </div>
+            <fieldset class="pedDepthPick">
+              <legend>Prüftiefe</legend>
+              <label class="pedDepthOption">
+                <input type="radio" name="pedGenDepth" value="4" />
+                4 Generationen
+              </label>
+              <label class="pedDepthOption">
+                <input type="radio" name="pedGenDepth" value="16" checked />
+                16 Generationen
+              </label>
+            </fieldset>
             <div class="pedLegend">
               <span class="pedLegendItem"><span class="pedSwatch pedSwatchHorse"></span> eingetragen</span>
               <span class="pedLegendItem"><span class="pedSwatch pedSwatchFoundation"></span> Foundation</span>
-              <span class="pedLegendItem"><span class="pedSwatch pedSwatchFortsetzung"></span> … Fortsetzung</span>
-              <span class="pedLegendItem"><span class="pedSwatch pedSwatchOverlap"></span> nächster gemeinsamer Vorfahr</span>
+              <span class="pedLegendItem"><span class="pedSwatch pedSwatchFortsetzung"></span> nicht eingetragen</span>
+              <span class="pedLegendItem"><span class="pedSwatch pedSwatchOverlap"></span> Inzucht</span>
             </div>
             <div id="pedInbreedingResult" class="pedInbreedingResult muted">
               Wähle Stute und/oder Hengst für die Inzuchtprüfung.
@@ -296,13 +300,13 @@
       </main>
 
       <footer class="footer muted">
-        Version 6 · Wenn Änderungen fehlen: alle Dateien (<code>index.html</code>, <code>app.js</code>,
+        Version 7 · Wenn Änderungen fehlen: alle Dateien (<code>index.html</code>, <code>app.js</code>,
         <code>stammbaum.js</code>, <code>styles.css</code>) im Repo prüfen und Seite mit Strg+F5 neu laden.
       </footer>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="./app.js?v=5" defer></script>
-    <script src="./stammbaum.js?v=6" defer></script>
+    <script src="./stammbaum.js?v=7" defer></script>
   </body>
 </html>

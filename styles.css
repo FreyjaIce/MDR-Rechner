@@ -211,11 +211,38 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation M
 .pedListName{font-size:14px;color:var(--text)}
 .pedListMeta{font-size:12px;color:var(--muted)}
 
+.pedDepthPick{
+  margin:12px 0 0 0;
+  padding:10px 12px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(255,255,255,.03);
+}
+.pedDepthPick legend{
+  padding:0 6px;
+  font-size:13px;
+  color:var(--muted);
+}
+.pedDepthOption{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  margin-right:16px;
+  font-size:13px;
+  color:var(--text);
+  cursor:pointer;
+}
+.pedDepthOption input{
+  width:16px;height:16px;
+  accent-color:#7c3aed;
+  cursor:pointer;
+}
+
 .pedLegend{
   display:flex;
   flex-wrap:wrap;
   gap:12px;
-  margin:8px 0 12px 0;
+  margin:12px 0 0 0;
   font-size:12px;
   color:var(--muted);
 }
@@ -250,12 +277,8 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation M
 .pedInbreedingResult ul{margin:8px 0 0 18px;padding:0}
 .pedInbreedingResult li{margin:4px 0}
 .pedPairTrees{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:14px;
   margin-top:14px;
 }
-@media (max-width:900px){.pedPairTrees{grid-template-columns:1fr}}
 .pedPairTrees.hidden{display:none}
 .pedPairPanel{
   border:1px solid var(--border);
@@ -263,36 +286,103 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation M
   padding:10px;
   background:rgba(255,255,255,.03);
 }
-.pedPairPanel h3{
+.pedPairPanelFull{padding:12px}
+.pedPairPanel h3,
+.pedPairPanelFull h3{
   margin:0 0 8px 0;
   font-size:13px;
   color:var(--muted);
   font-weight:600;
 }
+.pedChartNote{margin:0 0 8px 0;font-size:12px}
 
-.pedTreeHost{min-height:120px}
 .pedScroll{
   overflow:auto;
   max-width:100%;
   padding-bottom:8px;
 }
-.pedTreeRoot{
-  display:flex;
-  align-items:center;
+.pedChart{
+  display:grid;
+  grid-template-columns:repeat(var(--cols), minmax(118px, 132px));
+  grid-template-rows:repeat(var(--rows), 34px);
   gap:0;
   min-width:max-content;
 }
+.pedChartCell{
+  grid-column:var(--c);
+  grid-row:var(--r) / span var(--rs);
+  display:flex;
+  align-items:center;
+  position:relative;
+  padding:2px 0;
+}
+.pedChartCellChild .pedChartCellInner{padding-left:10px}
+.pedChartCellInner{
+  display:flex;
+  align-items:center;
+  width:100%;
+  height:100%;
+  position:relative;
+  min-height:30px;
+}
+.pedChartLineIn{
+  position:absolute;
+  left:0;
+  top:50%;
+  width:10px;
+  height:1px;
+  background:rgba(255,255,255,.32);
+  transform:translateY(-50%);
+  pointer-events:none;
+}
+.pedChartBridge{
+  position:relative;
+  flex:1;
+  align-self:stretch;
+  min-width:14px;
+  pointer-events:none;
+}
+.pedChartLineH{
+  position:absolute;
+  left:0;
+  top:50%;
+  width:50%;
+  height:1px;
+  background:rgba(255,255,255,.32);
+  transform:translateY(-50%);
+}
+.pedChartLineV{
+  position:absolute;
+  left:50%;
+  top:25%;
+  bottom:25%;
+  width:1px;
+  background:rgba(255,255,255,.32);
+  transform:translateX(-50%);
+}
 .pedNode{
-  min-width:110px;
-  max-width:140px;
-  padding:8px 10px;
+  position:relative;
+  z-index:1;
+  flex:0 0 auto;
+  width:100%;
+  max-width:122px;
+  min-width:96px;
+  padding:6px 8px;
   border:1px solid var(--border);
   border-radius:10px;
   background:rgba(255,255,255,.05);
   font-size:12px;
 }
-.pedNode .pedName{font-weight:600;color:var(--text);line-height:1.25}
-.pedNode .pedMeta{font-size:11px;color:var(--muted);margin-top:2px}
+.pedNode .pedName{font-weight:600;color:var(--text);line-height:1.25;word-break:break-word}
+.pedNode .pedMeta{font-size:11px;color:var(--muted);margin-top:2px;word-break:break-word}
+.pedFoal{
+  border-color:rgba(96,165,250,.55);
+  background:rgba(96,165,250,.1);
+}
+.pedPlaceholder{
+  border-style:dashed;
+  opacity:.75;
+}
 .pedHorse{border-color:rgba(124,58,237,.35)}
 .pedInStall{box-shadow:0 0 0 1px rgba(124,58,237,.45) inset}
 .pedOverlap{
@@ -303,21 +393,3 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation M
 .pedFoundation{border-color:rgba(34,197,94,.45);background:rgba(34,197,94,.08)}
 .pedFortsetzung{border-color:rgba(251,191,36,.45);background:rgba(251,191,36,.08)}
 .pedMissing{border-color:rgba(239,68,68,.35);background:rgba(239,68,68,.08)}
-.pedParents{
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  gap:8px;
-  margin-left:10px;
-  padding-left:10px;
-  border-left:1px solid var(--border);
-}
-.pedBranch{display:flex;align-items:center}
-.pedBranchSire::before,
-.pedBranchDam::before{
-  content:"";
-  width:10px;
-  border-top:1px solid var(--border);
-  margin-right:0;
-  flex-shrink:0;
-}

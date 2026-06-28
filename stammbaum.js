@@ -1,4 +1,4 @@
-/* Stammbaum-Modul: Excel-basierte Pferdedatenbank mit 8-Generationen-Ansicht */
+/* Stammbaum-Modul: Excel-basierte Pferdedatenbank mit Verpaarungs- und Inzuchtprüfung */
 
 const PEDIGREE_DEPTH_OPTIONS = [4, 16];
 const SHEET_NAME = "Pferde";
@@ -79,8 +79,13 @@ const state = {
 };
 
 function getPedigreeGenerations() {
-  const n = Number(document.getElementById("pedGenDepth")?.value);
-  return PEDIGREE_DEPTH_OPTIONS.includes(n) ? n : 4;
+  const checked = document.querySelector('input[name="pedGenDepth"]:checked');
+  const n = Number(checked?.value);
+  return PEDIGREE_DEPTH_OPTIONS.includes(n) ? n : 16;
+}
+
+function getPedigreeDisplayGenerations(checkDepth) {
+  return Math.min(checkDepth, 8);
 }
 
 function stEscapeHtml(s) {
@@ -453,9 +458,14 @@ function groupAncestorGenerations(entries) {
   return map;
 }
 
-function formatGenerationSet(gens) {
+function formatGenerationSet(gens, side) {
   const sorted = [...gens].sort((a, b) => a - b);
-  return sorted.map((g) => `Gen ${g}`).join(", ");
+  return sorted
+    .map((g) => {
+      if (g === 0) return side === "sire" ? "Verpaarungspartner (Hengst)" : "Verpaarungspartner (Stute)";
+      return `Gen ${g}`;
+    })
+    .join(", ");
 }
 
 function closestOverlapDistance(overlap) {
@@ -486,19 +496,29 @@ function analyzePairInbreeding(stallion, mare, horses, maxGen) {
   const sireMap = groupAncestorGenerations(sireEntries);
   const damMap = groupAncestorGenerations(damEntries);
 
-  if (sireMap.has(mareKey)) {
-    directIssues.push(
-      `„${mare.name}" (Stute) ist Vorfahre von „${stallion.name}" (${formatGenerationSet(sireMap.get(mareKey).generations)}).`
-    );
-  }
+  const overlaps = [];
+
   if (damMap.has(stallionKey)) {
-    directIssues.push(
-      `„${stallion.name}" (Hengst) ist Vorfahre von „${mare.name}" (${formatGenerationSet(damMap.get(stallionKey).generations)}).`
-    );
+    overlaps.push({
+      name: stallion.name,
+      nameKey: stallionKey,
+      sireGenerations: new Set([0]),
+      damGenerations: damMap.get(stallionKey).generations,
+      minGen: 0,
+    });
+  }
+  if (sireMap.has(mareKey)) {
+    overlaps.push({
+      name: mare.name,
+      nameKey: mareKey,
+      sireGenerations: sireMap.get(mareKey).generations,
+      damGenerations: new Set([0]),
+      minGen: 0,
+    });
   }
 
-  const overlaps = [];
   for (const [key, sireData] of sireMap.entries()) {
+    if (key === stallionKey || key === mareKey) continue;
     const damData = damMap.get(key);
     if (!damData) continue;
     overlaps.push({
@@ -515,8 +535,48 @@ function analyzePairInbreeding(stallion, mare, horses, maxGen) {
   return { directIssues, closestOverlap, overlapKeys, maxGen };
 }
 
-function renderPedigreeNode(node, depth, maxGen, highlightKeys = null) {
-  if (depth > maxGen) return "";
+function treeParent(node, side, byName) {
+  if (node.kind === "foal") {
+    if (side === "sire") {
+      return node.stallion
+        ? { kind: "horse", horse: node.stallion }
+        : { kind: "placeholder", label: "Hengst wählen" };
+    }
+    return node.mare
+      ? { kind: "horse", horse: node.mare }
+      : { kind: "placeholder", label: "Stute wählen" };
+  }
+  if (node.kind === "horse") return resolveParent(node.horse, side, byName);
+  return { kind: "foundation", label: "Foundation" };
+}
+
+function buildPedigreeCells(root, displayGen, byName) {
+  const totalRows = 1 << displayGen;
+  const cells = [];
+
+  function visit(node, gen, rowStart, rowSpan) {
+    cells.push({ gen, rowStart, rowSpan, node });
+    if (gen >= displayGen) return;
+    const half = rowSpan / 2;
+    visit(treeParent(node, "sire", byName), gen + 1, rowStart, half);
+    visit(treeParent(node, "dam", byName), gen + 1, rowStart + half, half);
+  }
+
+  visit(root, 0, 0, totalRows);
+  return { cells, totalRows, totalCols: displayGen + 1 };
+}
+
+function renderNodeContent(node, highlightKeys) {
+  if (node.kind === "foal") {
+    const parts = [];
+    if (node.stallion) parts.push(`Vater: ${node.stallion.name}`);
+    if (node.mare) parts.push(`Mutter: ${node.mare.name}`);
+    const meta = parts.length ? `<div class="pedMeta">${stEscapeHtml(parts.join(" · "))}</div>` : "";
+    return `<div class="pedNode pedFoal">
+      <div class="pedName">Geplantes Fohlen</div>
+      ${meta}
+    </div>`;
+  }
 
   if (node.kind === "horse") {
     const h = node.horse;
@@ -529,23 +589,15 @@ function renderPedigreeNode(node, depth, maxGen, highlightKeys = null) {
     ]
       .filter(Boolean)
       .join(" ");
-    let html = `<div class="${cls}">
+    return `<div class="${cls}">
       <div class="pedName">${stEscapeHtml(h.name)}</div>
       <div class="pedMeta">${stEscapeHtml(geschlechtLabel(h.geschlecht))}</div>
     </div>`;
-
-    if (depth < maxGen) {
-      const byName = horsesByName(state.horses);
-      const sire = resolveParent(h, "sire", byName);
-      const dam = resolveParent(h, "dam", byName);
-      html += `<div class="pedParents">
-        <div class="pedBranch pedBranchSire">${renderPedigreeNode(sire, depth + 1, maxGen, highlightKeys)}</div>
-        <div class="pedBranch pedBranchDam">${renderPedigreeNode(dam, depth + 1, maxGen, highlightKeys)}</div>
-      </div>`;
-    }
-    return html;
   }
 
+  if (node.kind === "placeholder") {
+    return `<div class="pedNode pedPlaceholder"><div class="pedName">${stEscapeHtml(node.label)}</div></div>`;
+  }
   if (node.kind === "foundation") {
     return `<div class="pedNode pedFoundation"><div class="pedName">Foundation</div></div>`;
   }
@@ -558,16 +610,51 @@ function renderPedigreeNode(node, depth, maxGen, highlightKeys = null) {
   return `<div class="pedNode pedMissing"><div class="pedName">${stEscapeHtml(node.label)}</div></div>`;
 }
 
-function renderPedigreeInto(host, horse, title, maxGen, highlightKeys = null) {
+function renderFoalPedigreeChart(host, stallion, mare, checkDepth, highlightKeys) {
   if (!host) return;
-  if (!horse) {
+  if (!stallion && !mare) {
     host.innerHTML = `<p class="muted">—</p>`;
     return;
   }
-  const root = { kind: "horse", horse };
+
+  const displayGen = getPedigreeDisplayGenerations(checkDepth);
+  const root = { kind: "foal", stallion, mare };
+  const byName = horsesByName(state.horses);
+  const { cells, totalRows, totalCols } = buildPedigreeCells(root, displayGen, byName);
+
+  let title = "Stammbaum des geplanten Fohlens";
+  if (stallion && mare) title += ` (${stallion.name} × ${mare.name})`;
+  else if (stallion) title += ` — Vater: ${stallion.name}`;
+  else title += ` — Mutter: ${mare.name}`;
+
+  const truncNote =
+    checkDepth > displayGen
+      ? `<p class="pedChartNote muted">Anzeige: ${displayGen} Generationen · Prüfung bis Gen ${checkDepth}</p>`
+      : "";
+
+  const gridHtml = cells
+    .map(({ gen, rowStart, rowSpan, node }) => {
+      const fork =
+        gen < displayGen
+          ? `<div class="pedChartBridge" aria-hidden="true"><span class="pedChartLineH"></span><span class="pedChartLineV"></span></div>`
+          : "";
+      const childLine = gen > 0 ? `<span class="pedChartLineIn" aria-hidden="true"></span>` : "";
+      return `<div class="pedChartCell${gen > 0 ? " pedChartCellChild" : ""}" style="--c:${gen + 1};--r:${rowStart + 1};--rs:${rowSpan}">
+        <div class="pedChartCellInner">
+          ${childLine}
+          ${renderNodeContent(node, highlightKeys)}
+          ${fork}
+        </div>
+      </div>`;
+    })
+    .join("");
+
   host.innerHTML = `
     <h3>${stEscapeHtml(title)}</h3>
-    <div class="pedScroll"><div class="pedTreeRoot">${renderPedigreeNode(root, 0, maxGen, highlightKeys)}</div></div>
+    ${truncNote}
+    <div class="pedScroll">
+      <div class="pedChart" style="--cols:${totalCols};--rows:${totalRows}">${gridHtml}</div>
+    </div>
   `;
 }
 
@@ -852,21 +939,11 @@ function renderPairTrees(ctx) {
   }
 
   treesHost.classList.remove("hidden");
-  treesHost.innerHTML = `
-    <div class="pedPairPanel" id="pedPairTreeStallion"></div>
-    <div class="pedPairPanel" id="pedPairTreeMare"></div>
-  `;
-  renderPedigreeInto(
-    document.getElementById("pedPairTreeStallion"),
+  treesHost.innerHTML = `<div class="pedPairPanel pedPairPanelFull" id="pedFoalTreeHost"></div>`;
+  renderFoalPedigreeChart(
+    document.getElementById("pedFoalTreeHost"),
     stallion,
-    stallion ? `Hengst: ${stallion.name}` : "Hengst",
-    maxGen,
-    overlapKeys
-  );
-  renderPedigreeInto(
-    document.getElementById("pedPairTreeMare"),
     mare,
-    mare ? `Stute: ${mare.name}` : "Stute",
     maxGen,
     overlapKeys
   );
@@ -888,9 +965,9 @@ function renderInbreedingCheck(ctx) {
   if (!ctx.complete) {
     host.className = "pedInbreedingResult muted";
     if (ctx.mare && !ctx.stallion) {
-      host.textContent = `Stammbaum von „${ctx.mare.name}" — wähle noch einen Hengst für die Inzuchtprüfung.`;
+      host.textContent = `Stammbaum des geplanten Fohlens — wähle noch einen Hengst für die Inzuchtprüfung.`;
     } else {
-      host.textContent = `Stammbaum von „${ctx.stallion.name}" — wähle noch eine Stute für die Inzuchtprüfung.`;
+      host.textContent = `Stammbaum des geplanten Fohlens — wähle noch eine Stute für die Inzuchtprüfung.`;
     }
     return;
   }
@@ -907,12 +984,10 @@ function renderInbreedingCheck(ctx) {
   host.className = "pedInbreedingResult pedInbreedingWarn";
   let html = `<b>Inzuchtwarnung</b> für „${stEscapeHtml(stallion.name)}" × „${stEscapeHtml(mare.name)}":`;
 
-  if (directIssues.length > 0) {
-    html += `<ul>${directIssues.map((d) => `<li>${stEscapeHtml(d)}</li>`).join("")}</ul>`;
-  }
-
   if (closestOverlap) {
-    html += `<ul><li><b>${stEscapeHtml(closestOverlap.name)}</b> — nächster gemeinsamer Vorfahr · Hengst-Linie: ${formatGenerationSet(closestOverlap.sireGenerations)} · Stuten-Linie: ${formatGenerationSet(closestOverlap.damGenerations)}</li></ul>`;
+    html += `<ul><li><b>${stEscapeHtml(closestOverlap.name)}</b> — nächster gemeinsamer Vorfahr · Hengst-Linie: ${formatGenerationSet(closestOverlap.sireGenerations, "sire")} · Stuten-Linie: ${formatGenerationSet(closestOverlap.damGenerations, "dam")}</li></ul>`;
+  } else if (directIssues.length > 0) {
+    html += `<ul>${directIssues.map((d) => `<li>${stEscapeHtml(d)}</li>`).join("")}</ul>`;
   }
 
   host.innerHTML = html;
@@ -930,7 +1005,9 @@ function initStammbaum() {
   document.getElementById("pedTemplateBtn")?.addEventListener("click", downloadTemplate);
   document.getElementById("pedAddBtn")?.addEventListener("click", addNewHorse);
   document.getElementById("pedFileInput")?.addEventListener("change", onFileInputChange);
-  document.getElementById("pedGenDepth")?.addEventListener("change", renderAll);
+  document.querySelectorAll('input[name="pedGenDepth"]').forEach((el) => {
+    el.addEventListener("change", renderAll);
+  });
   document.getElementById("pedPairMare")?.addEventListener("change", renderAll);
   document.getElementById("pedPairStallion")?.addEventListener("change", renderAll);
 
