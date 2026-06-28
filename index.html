@@ -261,8 +261,8 @@
           <section class="card pedPairCard">
             <h2>Verpaarung planen</h2>
             <p class="muted" style="margin:0 0 12px 0;font-size:13px">
-              Prüft gemeinsame Vorfahren zwischen Stute und Hengst (bis zu 8 Generationen). Inzucht innerhalb
-              eines Elternteils allein wird nicht gewertet.
+              Prüft gemeinsame Vorfahren zwischen Stute und Hengst. Inzucht innerhalb eines Elternteils allein
+              wird nicht gewertet.
             </p>
             <div class="twoCol">
               <div class="formRow">
@@ -274,45 +274,35 @@
                 <select id="pedPairStallion"></select>
               </div>
             </div>
+            <div class="formRow" style="margin-top:12px">
+              <label for="pedGenDepth">Prüftiefe</label>
+              <select id="pedGenDepth">
+                <option value="4">4 Generationen</option>
+                <option value="16" selected>16 Generationen</option>
+              </select>
+            </div>
+            <div class="pedLegend">
+              <span class="pedLegendItem"><span class="pedSwatch pedSwatchHorse"></span> eingetragen</span>
+              <span class="pedLegendItem"><span class="pedSwatch pedSwatchFoundation"></span> Foundation</span>
+              <span class="pedLegendItem"><span class="pedSwatch pedSwatchFortsetzung"></span> … Fortsetzung</span>
+              <span class="pedLegendItem"><span class="pedSwatch pedSwatchOverlap"></span> nächster gemeinsamer Vorfahr</span>
+            </div>
             <div id="pedInbreedingResult" class="pedInbreedingResult muted">
-              Wähle Stute und Hengst für die Inzuchtprüfung.
+              Wähle Stute und/oder Hengst für die Inzuchtprüfung.
             </div>
             <div id="pedPairTrees" class="pedPairTrees hidden"></div>
           </section>
-
-          <div class="pedLayout">
-            <section class="card">
-              <h2>Pferde verwalten</h2>
-              <div id="pedHorseList" class="pedList"></div>
-              <div id="pedEditor" style="margin-top:14px"></div>
-            </section>
-
-            <section class="card">
-              <h2>Stammbaum (8 Generationen)</h2>
-              <div class="formRow">
-                <label for="pedFocusSelect">Fokuspferd (nur „Im Stall“)</label>
-                <select id="pedFocusSelect"></select>
-              </div>
-              <div class="pedLegend">
-                <span class="pedLegendItem"><span class="pedSwatch pedSwatchHorse"></span> eingetragen</span>
-                <span class="pedLegendItem"><span class="pedSwatch pedSwatchFoundation"></span> Foundation</span>
-                <span class="pedLegendItem"><span class="pedSwatch pedSwatchFortsetzung"></span> … Fortsetzung</span>
-                <span class="pedLegendItem"><span class="pedSwatch pedSwatchOverlap"></span> gemeinsamer Vorfahr</span>
-              </div>
-              <div id="pedTree" class="pedTreeHost muted">Wähle ein Pferd aus deinem Stall.</div>
-            </section>
-          </div>
         </section>
       </main>
 
       <footer class="footer muted">
-        Version 5 · Wenn Änderungen fehlen: alle Dateien (<code>index.html</code>, <code>app.js</code>,
+        Version 6 · Wenn Änderungen fehlen: alle Dateien (<code>index.html</code>, <code>app.js</code>,
         <code>stammbaum.js</code>, <code>styles.css</code>) im Repo prüfen und Seite mit Strg+F5 neu laden.
       </footer>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="./app.js?v=5" defer></script>
-    <script src="./stammbaum.js?v=4" defer></script>
+    <script src="./stammbaum.js?v=6" defer></script>
   </body>
 </html>
