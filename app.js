@@ -569,9 +569,11 @@ function parsePercentBlocks(text) {
     prevNonEmpty = line;
   }
 
-  // keep last occurrence per key (if pasted twice)
+  // Erstes Vorkommen pro Key (Potential vor Trainingsstand, falls doppelt eingefügt)
   const byKey = new Map();
-  for (const it of items) byKey.set(it.key, it);
+  for (const it of items) {
+    if (!byKey.has(it.key)) byKey.set(it.key, it);
+  }
   return [...byKey.values()];
 }
 
@@ -1154,24 +1156,25 @@ function init() {
     const basicsByKey = indexPctItems(basics);
     const interByKey = new Map(inter.map((x) => [x.key, x]));
 
-    const computed = TURNIER_RULES.map((rule) => {
-      // sanity check: always 1 discipline + 6 extras
+    const ruleByDiscKey = new Map(
+      TURNIER_RULES.map((rule) => [normalizeKey(rule.disciplineKey), rule])
+    );
+
+    const computed = [];
+    for (const disc of discs) {
+      const rule = ruleByDiscKey.get(disc.key);
+      if (!rule) continue;
+
       if (rule.extras.length !== 6 || (rule.interTraits?.length ?? 0) !== 3) {
-        return { rule, value: null, lkStr: null, interStr: null, missing: ["Konfigurationsfehler"] };
+        computed.push({ rule, value: null, lkStr: null, interStr: null, missing: ["Konfigurationsfehler"] });
+        continue;
       }
+
       const r = calcTurnierWertForRule(rule, discsByKey, basicsByKey, interByKey);
       const lkStr = r.lk ? `LK${r.lk}` : null;
       const interStr = r.interieur == null ? null : formatOneDecimalComma(r.interieur);
-      return { rule, value: r.value, lkStr, interStr, missing: r.missing };
-    });
-
-    // Sortierung nach "Wert" absteigend. Fehlende Werte kommen nach unten.
-    computed.sort((a, b) => {
-      const av = a.value == null ? -Infinity : a.value;
-      const bv = b.value == null ? -Infinity : b.value;
-      if (bv !== av) return bv - av;
-      return a.rule.name.localeCompare(b.rule.name, "de");
-    });
+      computed.push({ rule, value: r.value, lkStr, interStr, missing: r.missing });
+    }
 
     const lines = computed.map((row) => formatTurnierLine(row.rule.name, row.value, row.lkStr, row.interStr));
 
